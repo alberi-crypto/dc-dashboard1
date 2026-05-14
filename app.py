@@ -195,10 +195,17 @@ def estilizar_tabela(df, destaques_linha=None, col_total=None):
 
     styler = df.style.apply(aplicar, axis=1)
     if col_total and col_total in df.columns:
-        styler = styler.applymap(
-            lambda v: f"background-color: {cor_destaque}; font-weight: bold;",
-            subset=[col_total],
-        )
+        # pandas >= 2.1 usa .map; versões antigas usam .applymap
+        try:
+            styler = styler.map(
+                lambda v: f"background-color: {cor_destaque}; font-weight: bold;",
+                subset=[col_total],
+            )
+        except AttributeError:
+            styler = styler.applymap(
+                lambda v: f"background-color: {cor_destaque}; font-weight: bold;",
+                subset=[col_total],
+            )
     styler = styler.set_table_styles([
         {"selector": "thead th",
          "props": [("background-color", cor_header), ("color", "white"),
@@ -847,13 +854,14 @@ with tabs[6]:
     </script>
     """
 
+    
     n_parents = sum(1 for r in rows if r["Bloco"] != "DET")
     altura = max(450, 36 * n_parents + 100)
     components.html(html, height=min(altura, 900), scrolling=True)
 
     st.markdown(" ")
     st.download_button(
-        "📥 Baixar DRE selecionada (CSV)",
+        "Baixar DRE selecionada (CSV)",
         dre_df[["Conta", "Bloco"] + meses_sel].to_csv(index=False, sep=";", decimal=",").encode("utf-8-sig"),
         file_name=f"DRE_{'_'.join(meses_sel)}.csv",
         mime="text/csv",
